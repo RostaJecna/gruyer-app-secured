@@ -46,13 +46,13 @@ To address this vulnerability, needs proper escaping of user input in the error 
 <div class="message">{{_message:text}}</div>
 ```
 
-# Stored XSS
+## Stored XSS
 
-## Vulnerability Description
+### Vulnerability Description
 
 A potential Stored Cross-Site Scripting (XSS) vulnerability was identified in the Gruyere web application. The vulnerability exists within the snippet functionality, where user-provided data is served back to other users without proper sanitization.
 
-## Exploitation Example
+### Exploitation Example
 
 The following examples demonstrate different methods of exploiting the vulnerability:
 
@@ -62,7 +62,7 @@ The following examples demonstrate different methods of exploiting the vulnerabi
 
 Multiple failures in sanitizing HTML allow these exploits to work.
 
-## Fix
+### Fix
 
 To address this vulnerability, I used a more robust approach to sanitizing HTML using the `bleach` library. The `_SanitizeTag` function in the `sanitize.py` file is replaced with the following `SanitizeHtml` function:
 
@@ -87,13 +87,13 @@ def SanitizeHtml(s):
     return sanitized_html
 ```
 
-# XSRF Challenge
+## XSRF Challenge
 
-## Vulnerability Description
+### Vulnerability Description
 
 The XSRF challenge presented a scenario where an attacker could perform an account-changing action on behalf of a logged-in Gruyere user without their knowledge. The vulnerability existed in the snippet deletion functionality, where a simple URL request could delete a snippet.
 
-## Exploitation Example
+### Exploitation Example
 
 To exploit the vulnerability, an attacker could craft a URL like the following and lure the user to visit it:
 
@@ -101,7 +101,7 @@ To exploit the vulnerability, an attacker could craft a URL like the following a
 https://google-gruyere.appspot.com/123/deletesnippet?index=0
 ```
 
-## Fix
+### Fix
 
 To fix the vulnerability, I changed snippet deletion work via a `POST` request instead of a `GET` request. The HTML form for snippet deletion was updated to use `method='post'`. Additionally, an anti-CSRF token mechanism was introduced to ensure the authenticity of the request.
 
