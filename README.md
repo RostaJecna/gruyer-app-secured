@@ -20,6 +20,7 @@ http://code.google.com/terms.html
 # Security Updates - [11.03.2024]
 
 - [Reflected XSS](#reflected-xss)
+- [Stored XSS](#stored-xss)
 
 ## Reflected XSS
 
@@ -42,4 +43,45 @@ To address this vulnerability, needs proper escaping of user input in the error 
 ```html
 <!-- Example Fix in error.gtl -->
 <div class="message">{{_message:text}}</div>
+```
+
+# Stored XSS
+
+## Vulnerability Description
+
+A potential Stored Cross-Site Scripting (XSS) vulnerability was identified in the Gruyere web application. The vulnerability exists within the snippet functionality, where user-provided data is served back to other users without proper sanitization.
+
+## Exploitation Example
+
+The following examples demonstrate different methods of exploiting the vulnerability:
+
+1. `<a onmouseover="alert(1)" href="#">read this!</a>`
+2. `<p <script>alert(1)</script>hello`
+3. `</td <script>alert(1)</script>hello`
+
+Multiple failures in sanitizing HTML allow these exploits to work.
+
+## Fix
+
+To address this vulnerability, I used a more robust approach to sanitizing HTML using the `bleach` library. The `_SanitizeTag` function in the `sanitize.py` file is replaced with the following `SanitizeHtml` function:
+
+> Installation: `pip install bleach`
+
+```python
+# Fix - Using bleach library
+import bleach
+
+def SanitizeHtml(s):
+    allowed_tags = [
+        'a', 'b', 'big', 'br', 'center', 'code', 'em', 'h1', 'h2', 'h3',
+        'h4', 'h5', 'h6', 'hr', 'i', 'img', 'li', 'ol', 'p', 's', 'small',
+        'span', 'strong', 'table', 'td', 'tr', 'u', 'ul',
+    ]
+    
+    allowed_attributes = {}
+
+    # Use bleach to sanitize the HTML
+    sanitized_html = bleach.clean(s, tags=allowed_tags, attributes=allowed_attributes)
+
+    return sanitized_html
 ```
