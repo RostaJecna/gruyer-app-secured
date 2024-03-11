@@ -82,6 +82,7 @@
             <td valign='top'>
               <form action='/{{_unique_id}}/deletesnippet' method='post'>
                 <input type='hidden' name='index' value='{{_key}}'>
+                <input type='hidden' name='csrf_token' value='{{ csrf_token }}'>
                 <input type='submit' value='Delete Snippet'>
               </form>
             </td>
