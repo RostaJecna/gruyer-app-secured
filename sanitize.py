@@ -20,82 +20,31 @@ __author__ = 'Bruce Leban'
 
 # system modules
 import re
+import bleach
 
 
 def SanitizeHtml(s):
-  """Makes html safe for embedding in a document.
+    """Makes html safe for embedding in a document.
 
-  Filters the html to exclude all but a small subset of html by
-  removing script tags/attributes.
+    Filters the html to exclude all but a small subset of html by
+    removing script tags/attributes.
 
-  Args:
-    s: some html to sanitize.
+    Args:
+      s: some html to sanitize.
 
-  Returns:
-    The html with all unsafe html removed.
-  """
-  processed = ''
-  while s:
-    start = s.find('<')
-    if start >= 0:
-      end = s.find('>', start)
-      if end >= 0:
-        before = s[:start]
-        tag = s[start:end+1]
-        after = s[end+1:]
-      else:
-        before = s[:start]
-        tag = s[start:]
-        after = ''
-    else:
-      before = s
-      tag = ''
-      after = ''
+    Returns:
+      The html with all unsafe html removed.
+    """
 
-    processed += before + _SanitizeTag(tag)
-    s = after
-  return processed
+    # Define a whitelist of allowed tags and attributes
+    allowed_tags = [
+        'a', 'b', 'big', 'br', 'center', 'code', 'em', 'h1', 'h2', 'h3',
+        'h4', 'h5', 'h6', 'hr', 'i', 'img', 'li', 'ol', 'p', 's', 'small',
+        'span', 'strong', 'table', 'td', 'tr', 'u', 'ul',
+    ]
+    allowed_attributes = {}
 
+    # Use bleach to sanitize the HTML
+    sanitized_html = bleach.clean(s, tags=allowed_tags, attributes=allowed_attributes)
 
-TAG_RE = re.compile(r'<(.*?)(\s|>)')  # matches the start of an html tag
-
-
-def _SanitizeTag(t):
-  """Sanitizes a single html tag.
-
-  This does both a 'whitelist' for
-  the allowed tags and a 'blacklist' for the disallowed attributes.
-
-  Args:
-    t: a tag to sanitize.
-
-  Returns:
-    a safe tag.
-  """
-  allowed_tags = [
-      'a', 'b', 'big', 'br', 'center', 'code', 'em', 'h1', 'h2', 'h3',
-      'h4', 'h5', 'h6', 'hr', 'i', 'img', 'li', 'ol', 'p', 's', 'small',
-      'span', 'strong', 'table', 'td', 'tr', 'u', 'ul',
-  ]
-  disallowed_attributes = [
-      'onblur', 'onchange', 'onclick', 'ondblclick', 'onfocus',
-      'onkeydown', 'onkeypress', 'onkeyup', 'onload', 'onmousedown',
-      'onmousemove', 'onmouseout', 'onmouseup', 'onreset',
-      'onselect', 'onsubmit', 'onunload'
-  ]
-
-  # Extract the tag name and make sure it's allowed.
-  if t.startswith('</'):
-    return t
-  m = TAG_RE.match(t)
-  if m is None:
-    return t
-  tag_name = m.group(1)
-  if tag_name not in allowed_tags:
-    t = t[:m.start(1)] + 'blocked' + t[m.end(1):]
-
-  # This is a bit heavy handed but we want to be sure we don't
-  # allow any to get through.
-  for a in disallowed_attributes:
-    t = t.replace(a, 'blocked')
-  return t
+    return sanitized_html

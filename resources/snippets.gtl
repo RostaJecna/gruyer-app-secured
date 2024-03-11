@@ -80,7 +80,11 @@
               <script>document.write({{_key}} + 1)</script>&nbsp;&nbsp;
             </td>
             <td valign='top'>
-              <a href='/{{_unique_id}}/deletesnippet?index={{_key}}'>[X]</a>&nbsp;
+              <form action='/{{_unique_id}}/deletesnippet' method='post'>
+                <input type='hidden' name='index' value='{{_key}}'>
+                <input type='hidden' name='csrf_token' value='{{ csrf_token }}'>
+                <input type='submit' value='Delete Snippet'>
+              </form>
             </td>
             <td valign='top'>
               <div id='{{_key}}'>
