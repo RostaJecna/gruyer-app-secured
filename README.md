@@ -21,6 +21,7 @@ http://code.google.com/terms.html
 
 - [Reflected XSS](#reflected-xss)
 - [Stored XSS](#stored-xss)
+- [XSRF Challenge](#xsrf-challenge)
 
 ## Reflected XSS
 
@@ -84,4 +85,73 @@ def SanitizeHtml(s):
     sanitized_html = bleach.clean(s, tags=allowed_tags, attributes=allowed_attributes)
 
     return sanitized_html
+```
+
+# XSRF Challenge
+
+The XSRF challenge presented a scenario where an attacker could perform an account-changing action on behalf of a logged-in Gruyere user without their knowledge. The vulnerability existed in the snippet deletion functionality, where a simple URL request could delete a snippet.
+
+## Exploitation Example
+
+To exploit the vulnerability, an attacker could craft a URL like the following and lure the user to visit it:
+
+```
+https://google-gruyere.appspot.com/123/deletesnippet?index=0
+```
+
+## Fix
+
+To fix the vulnerability, I changed snippet deletion work via a `POST` request instead of a `GET` request. The HTML form for snippet deletion was updated to use `method='post'`. Additionally, an anti-CSRF token mechanism was introduced to ensure the authenticity of the request.
+
+The replaced form in `snippets.gtl`:
+
+```html
+<form action='/{{_unique_id}}/deletesnippet' method='post'>
+    <input type='hidden' name='index' value='{{_key}}'>
+    <input type='hidden' name='csrf_token' value='{{ csrf_token }}'>
+    <input type='submit' value='Delete Snippet'>
+</form>
+``` 
+
+The `_DoDeletesnippet` in `gruyere.py` method in the server-side code was modified to check for the `POST` request and verify the `anti-CSRF` token before processing the deletion:
+
+```python
+# Add constructor to GruyereRequestHandler class
+class GruyereRequestHandler(BaseHTTPRequestHandler):
+    def __init__(self):
+        self.csrf_token = secrets.token_urlsafe(16)
+```
+
+```python
+def _VerifyCsrfToken(self, params):
+    """Verify the anti-CSRF token."""
+    return params.get('csrf_token') == self.csrf_token
+```
+
+```python
+@staticmethod
+def _IsPostRequest(params):
+    """Check if the request method is POST."""
+    return params.get('REQUEST_METHOD') == 'POST'
+```
+
+```python
+def _DoDeletesnippet(self, cookie, specials, params):
+    if self._IsPostRequest(params):
+        if not self._VerifyCsrfToken(params):
+            self._SendError('Invalid CSRF Token', cookie, specials, params)
+            return
+
+        index = self._GetParameter(params, 'index')
+        snippets = self._GetSnippets(cookie, specials)
+
+        try:
+            del snippets[int(index)]
+        except (IndexError, TypeError, ValueError):
+            self._SendError('Invalid index (%s)' % (index,), cookie, specials, params)
+            return
+
+        self._SendRedirect('/snippets.gtl', specials[SPECIAL_UNIQUE_ID])
+    else:
+        self._SendError('Invalid Request Method', cookie, specials, params)
 ```
