@@ -89,6 +89,8 @@ def SanitizeHtml(s):
 
 # XSRF Challenge
 
+## Vulnerability Description
+
 The XSRF challenge presented a scenario where an attacker could perform an account-changing action on behalf of a logged-in Gruyere user without their knowledge. The vulnerability existed in the snippet deletion functionality, where a simple URL request could delete a snippet.
 
 ## Exploitation Example
